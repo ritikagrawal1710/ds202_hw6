@@ -1,0 +1,106 @@
+---
+title: "hw6"
+author: "Ritika Agrawal"
+github username: "ritikagrawal1710"
+date: "April 22, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Top dogs
+
+In this homework, you will try to reproduce the fantastic infographic for [top dogs](https://informationisbeautiful.net/visualizations/best-in-show-whats-the-top-data-dog/), originally produced by David McCandless. The raw data can be found [here](https://docs.google.com/spreadsheets/d/1l_HfF5EaN-QgnLc2UYdCc7L2CVrk0p3VdGB1godOyhk/edit#gid=10). You can download this file by File -- Download As -- Microsoft Excel (.xlsx).
+
+**Submission instructions**: Create a folder named `ds202_hw6`, and name the RMarkDown file including your solutions `hw6.Rmd` under this folder. For the submission, create a GitHub repository named `ds202_hw6` under your GitHub account, and push both `hw6.Rmd` and the knitted `hw6.html` before the deadline. I will assume you use the same GitHub username as for your HW5 submission. The latest version of your homework appearing on GitHub before the deadline is graded. *It is crucial to follow the exact folder structure and file names*, so that your homework can be reproduced and graded by an automated script. This homework is **due on April 22** before class.
+
+1. Import the data and clean appropriately. To read in the data, you can use `readxl::read_xlsx('fileNameHere', sheet='sheetNameHere')`. Required data are in the sheets `Best in show` and `Best in show full sheet`. Take extra care on the column names and the first few rows of the data frame after read in.
+
+2. Create a graphics similar to the  [top dogs](https://informationisbeautiful.net/visualizations/best-in-show-whats-the-top-data-dog/) figure. Your figure needs to display the following information with appropriate plotting elements:
+
+- breed of dog
+- type of dog (work, toy, etc.)
+- size of dog
+- data score 
+- popularity
+- intelligence of the dog
+- appropriate legends & explanation
+
+Hints and Notes:
+
+- The breed of dog can be displayed without the silhouttes (text only is fine)
+- Avoid (too much) overlaps!
+- Choose a good color scheme.
+- Your submission is supposed to be fully reproducible, i.e. the TA and I will 'knit' your submission in RStudio. 
+
+```{r,fig.height = 15, fig.width = 15}
+
+#install.packages("stringr")
+library(stringr)
+#install.packages("readxl")
+library(readxl)
+#install.packages("ggplot2")
+library(ggplot2)
+#install.packages("dplyr")
+library(dplyr)
+#install.packages("DT")
+library(DT)
+
+# Specify the worksheet by name
+dog_excel_1 <- read_excel("KIB - Best in Show (public).xlsx", sheet = "Best in show", range = cell_rows(3:91))
+
+dog_excel_2 <- read_excel("KIB - Best in Show (public).xlsx", sheet = "Best in show full sheet", range = cell_rows(3:91))
+
+
+# Pick the desired variables
+
+dog_excel_3 <- dog_excel_1[c(1,10,46)]
+dog_excel_4 <- dog_excel_2[c(1,3,5,6)]
+
+#Merge the two files
+
+total <- merge(dog_excel_3,dog_excel_4,by=c(1))
+  
+# Rename the columns
+colnames(total) <- c("breed", "intelligence", "size", "category", "score", "popularity")
+
+
+# Remove row with incorrect value
+total <- total[-38,]
+
+datatable(total, options = list(pageLength = 5))
+
+unique(total$intelligence)
+
+#Below code is to convert values of 'intelligence' column to 'clever' and 'dumb' in line with the values shown in the 'Top Dogs' figure provided in the question
+
+total$intelligence %<>% 
+  str_replace(pattern = "Brightest", replace = "clever", .) %>%   
+  str_replace(pattern = "Above average", replace = "clever", .) %>% 
+  str_replace(pattern = "Excellent", replace = "clever", .) %>% 
+  str_replace(pattern = "Average", replace = "dumb", .) %>% 
+  str_replace(pattern = "Fair", replace = "dumb", .) %>% 
+  str_replace(pattern = "Lowest", replace = "dumb", .)
+
+
+# change popularity from string into numeric values
+total$popularity <- as.numeric(total$popularity)
+total$score <- as.numeric(total$score)
+
+
+# create a ggplot/ggimage object
+
+p <- ggplot(total, aes(score, popularity, shape = intelligence, color = category, size = size))+
+   geom_point() +  geom_text(aes(label=breed),colour="black", hjust=0, vjust=0, size=3) +
+   geom_hline(yintercept=75, color = "darkgrey", size=0.75)+
+   geom_vline(xintercept=2.4, color = "darkgrey", size=0.75)+
+  theme(plot.title = element_text(size=20, face="bold", 
+    margin = margin(0, 0, 0, 0)))
+
+p 
+
+```
+
+
